@@ -10,9 +10,9 @@ from pathlib import Path
 from anomalyDetector import fit_norm_distribution_param
 
 parser = argparse.ArgumentParser(description='PyTorch RNN Prediction Model on Time-series Dataset')
-parser.add_argument('--data', type=str, default='ecg',
+parser.add_argument('--data', type=str, default='IMS_bearings_test2',
                     help='type of the dataset (ecg, gesture, power_demand, space_shuttle, respiration, nyc_taxi')
-parser.add_argument('--filename', type=str, default='chfdb_chf13_45590.pkl',
+parser.add_argument('--filename', type=str, default='combinedfiles_s0.pkl',
                     help='filename of the dataset')
 parser.add_argument('--model', type=str, default='LSTM',
                     help='type of recurrent net (RNN_TANH, RNN_RELU, LSTM, GRU, SRU)')

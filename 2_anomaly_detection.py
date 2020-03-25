@@ -15,9 +15,9 @@ from anomalyDetector import get_precision_recall
 parser = argparse.ArgumentParser(description='PyTorch RNN Anomaly Detection Model')
 parser.add_argument('--prediction_window_size', type=int, default=10,
                     help='prediction_window_size')
-parser.add_argument('--data', type=str, default='ecg',
+parser.add_argument('--data', type=str, default='IMS_bearings_test2',
                     help='type of the dataset (ecg, gesture, power_demand, space_shuttle, respiration, nyc_taxi')
-parser.add_argument('--filename', type=str, default='chfdb_chf13_45590.pkl',
+parser.add_argument('--filename', type=str, default='combinedfiles_s0.pkl',
                     help='filename of the dataset')
 parser.add_argument('--save_fig', action='store_true',
                     help='save results as figures')
@@ -106,8 +106,11 @@ try:
         print('=> calculating precision, recall, and f_beta')
         precision, recall, f_beta = get_precision_recall(args, score, num_samples=1000, beta=args.beta,
                                                          label=TimeseriesData.testLabel.to(args.device))
-        print('data: ',args.data,' filename: ',args.filename,
-              ' f-beta (no compensation): ', f_beta.max().item(),' beta: ',args.beta)
+        import pdb
+        pdb.set_trace()
+        print(f_beta)
+        #print('data: ',args.data,' filename: ',args.filename,
+        #      ' f-beta (no compensation): ', f_beta.max().item(),' beta: ',args.beta)
         if args.compensate:
             precision, recall, f_beta = get_precision_recall(args, score, num_samples=1000, beta=args.beta,
                                                              label=TimeseriesData.testLabel.to(args.device),

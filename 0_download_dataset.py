@@ -219,7 +219,6 @@ for set in bearing_sets:
             tokens.append(0)
             labeled_data.append(tokens)
     train_len = int(0.15 * len(labeled_data))
-    #pdb.set_trace()
     train_path = raw_path.parent.joinpath('labeled','train',raw_path.name).with_suffix('.pkl')
     train_path.parent.mkdir(parents=True, exist_ok=True)
     with open(str(train_path),'wb') as pkl:

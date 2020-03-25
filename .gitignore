@@ -1,6 +1,7 @@
 result/*
 dataset/*
 save/*
+RNN/*
 
 *.pyc
 ./idea

@@ -5,18 +5,18 @@ import pickle
 from shutil import unpack_archive
 
 urls = dict()
-urls['ecg']=['http://www.cs.ucr.edu/~eamonn/discords/ECG_data.zip',
-             'http://www.cs.ucr.edu/~eamonn/discords/mitdbx_mitdbx_108.txt',
-             'http://www.cs.ucr.edu/~eamonn/discords/qtdbsele0606.txt',
-             'http://www.cs.ucr.edu/~eamonn/discords/chfdbchf15.txt',
-             'http://www.cs.ucr.edu/~eamonn/discords/qtdbsel102.txt']
-urls['gesture']=['http://www.cs.ucr.edu/~eamonn/discords/ann_gun_CentroidA']
-urls['space_shuttle']=['http://www.cs.ucr.edu/~eamonn/discords/TEK16.txt',
-                       'http://www.cs.ucr.edu/~eamonn/discords/TEK17.txt',
-                       'http://www.cs.ucr.edu/~eamonn/discords/TEK14.txt']
-urls['respiration']=['http://www.cs.ucr.edu/~eamonn/discords/nprs44.txt',
-                     'http://www.cs.ucr.edu/~eamonn/discords/nprs43.txt']
-urls['power_demand']=['http://www.cs.ucr.edu/~eamonn/discords/power_data.txt']
+# urls['ecg']=['http://www.cs.ucr.edu/~eamonn/discords/ECG_data.zip',
+             # 'http://www.cs.ucr.edu/~eamonn/discords/mitdbx_mitdbx_108.txt',
+             # 'http://www.cs.ucr.edu/~eamonn/discords/qtdbsele0606.txt',
+             # 'http://www.cs.ucr.edu/~eamonn/discords/chfdbchf15.txt',
+             # 'http://www.cs.ucr.edu/~eamonn/discords/qtdbsel102.txt']
+# urls['gesture']=['http://www.cs.ucr.edu/~eamonn/discords/ann_gun_CentroidA']
+# urls['space_shuttle']=['http://www.cs.ucr.edu/~eamonn/discords/TEK16.txt',
+                       # 'http://www.cs.ucr.edu/~eamonn/discords/TEK17.txt',
+                       # 'http://www.cs.ucr.edu/~eamonn/discords/TEK14.txt']
+# urls['respiration']=['http://www.cs.ucr.edu/~eamonn/discords/nprs44.txt',
+                     # 'http://www.cs.ucr.edu/~eamonn/discords/nprs43.txt']
+# urls['power_demand']=['http://www.cs.ucr.edu/~eamonn/discords/power_data.txt']
 
 for dataname in urls:
     raw_dir = Path('dataset', dataname, 'raw')
@@ -199,3 +199,34 @@ nyc_taxi_test_path = nyc_taxi_raw_path.parent.parent.joinpath('labeled','test',n
 nyc_taxi_test_path.parent.mkdir(parents=True, exist_ok=True)
 with open(str(nyc_taxi_test_path),'wb') as pkl:
     pickle.dump(labeled_data[13104:], pkl)
+
+bearing_sets = []    
+import pdb
+
+for root, dir, files in os.walk('dataset'):
+    for file in files:
+        if("combinedfiles" in file and ".csv" in file):
+            bearing_sets.append(root + '/' + file)
+
+for set in bearing_sets:
+    labeled_data = []
+    raw_path = Path(set)
+    with open(str(raw_path),'r') as f:
+        for i, line in enumerate(f):
+            if(i==0): #skip header
+                continue
+            tokens = [float(token) for token in line.strip().split(',')[1:]]
+            tokens.append(0)
+            labeled_data.append(tokens)
+    train_len = int(0.15 * len(labeled_data))
+    #pdb.set_trace()
+    train_path = raw_path.parent.joinpath('labeled','train',raw_path.name).with_suffix('.pkl')
+    train_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(str(train_path),'wb') as pkl:
+        pickle.dump(labeled_data[:train_len], pkl)
+
+    test_path = raw_path.parent.joinpath('labeled','test',raw_path.name).with_suffix('.pkl')
+    test_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(str(test_path),'wb') as pkl:
+        pickle.dump(labeled_data[train_len:], pkl)
+        

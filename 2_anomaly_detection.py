@@ -107,8 +107,6 @@ try:
         print('=> calculating precision, recall, and f_beta')
         precision, recall, f_beta = get_precision_recall(args, score, num_samples=1000, beta=args.beta,
                                                          label=TimeseriesData.testLabel.to(args.device))
-        import pdb
-        pdb.set_trace()
         print(f_beta)
         #print('data: ',args.data,' filename: ',args.filename,
         #      ' f-beta (no compensation): ', f_beta.max().item(),' beta: ',args.beta)
@@ -116,8 +114,9 @@ try:
             precision, recall, f_beta = get_precision_recall(args, score, num_samples=1000, beta=args.beta,
                                                              label=TimeseriesData.testLabel.to(args.device),
                                                              predicted_score=predicted_score)
-            print('data: ',args.data,' filename: ',args.filename,
-                  ' f-beta    (compensation): ', f_beta.max().item(),' beta: ',args.beta)
+            print(f_beta)
+			#print('data: ',args.data,' filename: ',args.filename,
+            #      ' f-beta    (compensation): ', f_beta.max().item(),' beta: ',args.beta)
 
 
         target = preprocess_data.reconstruct(test_dataset.cpu()[:, 0, channel_idx],

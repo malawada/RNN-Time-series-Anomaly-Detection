@@ -131,7 +131,6 @@ def get_precision_recall(args, score, label, num_samples, beta=1.0, sampling='lo
     precision = torch.FloatTensor(precision)
     recall = torch.FloatTensor(recall)
 
-
     f1 = (1 + beta ** 2) * (precision * recall).div(beta ** 2 * precision + recall + 1e-7)
 
     return precision, recall, f1

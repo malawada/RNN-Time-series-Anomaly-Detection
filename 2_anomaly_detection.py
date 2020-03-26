@@ -2,6 +2,7 @@ import argparse
 import torch
 import pickle
 import preprocess_data
+import pandas as pd
 from model import model
 from torch import optim
 from pathlib import Path
@@ -205,4 +206,16 @@ pickle.dump(predicted_scores, open(str(save_dir.joinpath('predicted_scores.pkl')
 pickle.dump(precisions, open(str(save_dir.joinpath('precision.pkl')),'wb'))
 pickle.dump(recalls, open(str(save_dir.joinpath('recall.pkl')),'wb'))
 pickle.dump(f_betas, open(str(save_dir.joinpath('f_beta.pkl')),'wb'))
+
+pd.DataFrame(targets).to_csv(save_dir.joinpath('target.csv'))
+pd.DataFrame(mean_predictions).to_csv(save_dir.joinpath('mean_predictions.csv'))
+pd.DataFrame(oneStep_predictions).to_csv(save_dir.joinpath('oneStep_predictions.csv'))
+pd.DataFrame(Nstep_predictions).to_csv(save_dir.joinpath('Nstep_predictions.csv'))
+pd.DataFrame(scores).to_csv(save_dir.joinpath('score.csv'))
+pd.DataFrame(predicted_scores).to_csv(save_dir.joinpath('predicted_scores.csv'))
+pd.DataFrame(precisions).to_csv(save_dir.joinpath('precision.csv'))
+pd.DataFrame(recalls).to_csv(save_dir.joinpath('recall.csv'))
+pd.DataFrame(f_betas).to_csv(save_dir.joinpath('f_beta.csv'))
+
+
 print('-' * 89)

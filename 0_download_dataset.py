@@ -227,5 +227,5 @@ for set in bearing_sets:
     test_path = raw_path.parent.joinpath('labeled','test',raw_path.name).with_suffix('.pkl')
     test_path.parent.mkdir(parents=True, exist_ok=True)
     with open(str(test_path),'wb') as pkl:
-        pickle.dump(labeled_data[train_len:], pkl)
+        pickle.dump(labeled_data, pkl) #Test data is just the full length file. Test overlaps train.
         

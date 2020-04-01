@@ -1,9 +1,10 @@
 import argparse
+import os
 import torch
 import pickle
 import preprocess_data
 import pandas as pd
-from model import model
+from model import model as imported_model
 from torch import optim
 from pathlib import Path
 from matplotlib import pyplot as plt
@@ -16,7 +17,7 @@ from anomalyDetector import anomalyScore
 from anomalyDetector import get_precision_recall
 
 
-def main(args):    
+def main(args_):    
 
     print('-' * 89)
     print("=> loading checkpoint ")
@@ -45,7 +46,7 @@ def main(args):
     # Build the model
     ###############################################################################
     nfeatures = TimeseriesData.trainData.size(-1)
-    model = model.RNNPredictor(rnn_type = args.model,
+    model = imported_model.RNNPredictor(rnn_type = args.model,
                                enc_inp_size=nfeatures,
                                rnn_inp_size = args.emsize,
                                rnn_hid_size = args.nhid,
@@ -75,7 +76,7 @@ def main(args):
             # Predicted anomaly scores on test dataset can be used for the baseline of the adaptive threshold.
             if args.compensate:
                 print('=> training an SVR as anomaly score predictor')
-                train_score, _, _, hiddens, _ = anomalyScore(args, model, train_dataset, mean, cov, channel_idx=channel_idx)
+                train_score, _, _, hiddens, _, exectime = anomalyScore(args, model, train_dataset, mean, cov, channel_idx=channel_idx)
                 score_predictor = GridSearchCV(SVR(), cv=5,param_grid={"C": [1e0, 1e1, 1e2],"gamma": np.logspace(-1, 1, 3)})
                 score_predictor.fit(torch.cat(hiddens,dim=0).numpy(), train_score.cpu().numpy())
             else:
@@ -85,7 +86,7 @@ def main(args):
             # Anomaly scores are calculated on the test dataset
             # given the mean and the covariance calculated on the train dataset
             print('=> calculating anomaly scores')
-            score, sorted_prediction, sorted_error, _, predicted_score = anomalyScore(args, model, test_dataset, mean, cov,
+            score, sorted_prediction, sorted_error, _, predicted_score, exectime = anomalyScore(args, model, test_dataset, mean, cov,
                                                                                       score_predictor=score_predictor,
                                                                                       channel_idx=channel_idx)
 
@@ -106,7 +107,8 @@ def main(args):
                 print(f_beta)
                 #print('data: ',args.data,' filename: ',args.filename,
                 #      ' f-beta    (compensation): ', f_beta.max().item(),' beta: ',args.beta)
-
+            with open(os.path.join("result", args_.data, args_.filename[:-4], "exectime.txt"), mode='w') as f:
+                f.write(str(exectime))
 
             target = preprocess_data.reconstruct(test_dataset.cpu()[:, 0, channel_idx],
                                                  TimeseriesData.mean[channel_idx],

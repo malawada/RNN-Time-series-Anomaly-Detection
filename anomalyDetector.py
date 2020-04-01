@@ -1,6 +1,7 @@
 from torch.autograd import Variable
 import torch
 import numpy as np
+import time
 
 def fit_norm_distribution_param(args, model, train_dataset, channel_idx=0):
     predictions = []
@@ -42,10 +43,14 @@ def anomalyScore(args, model, dataset, mean, cov, channel_idx=0, score_predictor
     errors = []
     hiddens = []
     predicted_scores = []
+    
+    start = time.time()
+    
     with torch.no_grad():
         # Turn on evaluation mode which disables dropout.
         model.eval()
         pasthidden = model.init_hidden(1)
+        
         for t in range(len(dataset)):
             out, hidden = model.forward(dataset[t].unsqueeze(0), pasthidden)
             predictions.append([])
@@ -79,12 +84,14 @@ def anomalyScore(args, model, dataset, mean, cov, channel_idx=0, score_predictor
         mult3 = mult1.t() # [ prediction_window_size * 1 ]
         score = torch.mm(mult1,torch.mm(mult2,mult3))
         scores.append(score[0][0])
-
+    
     scores = torch.stack(scores)
     rearranged = torch.cat(rearranged,dim=0)
     errors = torch.cat(errors,dim=0)
+    
+    exectime = time.time() - start
 
-    return scores, rearranged, errors, hiddens, predicted_scores
+    return scores, rearranged, errors, hiddens, predicted_scores, exectime
 
 
 def get_precision_recall(args, score, label, num_samples, beta=1.0, sampling='log', predicted_score=None):

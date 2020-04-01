@@ -258,7 +258,8 @@ def main(args):
     print('-' * 89)
     print(args)
     print('-' * 89)
-
+	epoch_list = []
+	losses = []
     if not args.pretrained:
         # At any point you can hit Ctrl + C to break out of training early.
         try:
@@ -270,7 +271,8 @@ def main(args):
                 print('-' * 89)
                 print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.4f} | '.format(epoch, (time.time() - epoch_start_time),                                                                                        val_loss))
                 print('-' * 89)
-
+				epoch_list.append(epoch)
+				losses.append(val_loss)
                 generate_output(args,epoch,model,gen_dataset,TimeseriesData, startPoint=1500)
 
                 if epoch%args.save_interval==0:
@@ -288,7 +290,17 @@ def main(args):
         except KeyboardInterrupt:
             print('-' * 89)
             print('Exiting from training early')
-
+	plt.figure(figsize=(15,5))
+	plt.plot(epoch_list, losses)
+	plt.xlabel('Epoch',fontsize=15)
+	plt.ylabel('Val Loss',fontsize=15)
+	plt.title('Val Loss vs. Epoch ' + args.data + ' Dataset', fontsize=18, fontweight='bold')
+	plt.legend()
+	plt.tight_layout()
+	save_dir = Path('result',args.data,args.filename).with_suffix('').joinpath('fig_prediction')
+	save_dir.mkdir(parents=True,exist_ok=True)
+	plt.savefig(save_dir.joinpath('fig_val_epoch').with_suffix('.png'))
+	plt.close()
 
     # Calculate mean and covariance for each channel's prediction errors, and save them with the trained model
     print('=> calculating mean and covariance')

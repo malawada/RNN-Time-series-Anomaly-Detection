@@ -290,9 +290,9 @@ def main(args):
                                         'best_loss': best_val_loss,
                                         'state_dict': model.state_dict(),
                                         'optimizer': optimizer.state_dict(),
-                                        'args':args
-                                        'epoch_list': epoch_list
-                                        't_losses': t_losses
+                                        'args':args,
+                                        'epoch_list': epoch_list,
+                                        't_losses': t_losses,
                                         'v_losses': v_losses
                                         }
                     model.save_checkpoint(model_dictionary, is_best)
@@ -314,21 +314,24 @@ def main(args):
     plt.close()
 
     # Calculate mean and covariance for each channel's prediction errors, and save them with the trained model
-    print('=> calculating mean and covariance')
-    means, covs = list(),list()
-    train_dataset = TimeseriesData.batchify(args, TimeseriesData.trainData, bsz=1)
-    for channel_idx in range(model.enc_input_size):
-        mean, cov = fit_norm_distribution_param(args,model,train_dataset[:TimeseriesData.length],channel_idx)
-        means.append(mean), covs.append(cov)
-    model_dictionary = {'epoch': max(epoch,start_epoch),
-                        'best_loss': best_val_loss,
-                        'state_dict': model.state_dict(),
-                        'optimizer': optimizer.state_dict(),
-                        'args': args,
-                        'means': means,
-                        'covs': covs
-                        }
-    model.save_checkpoint(model_dictionary, True)
+    # print('=> calculating mean and covariance')
+    # means, covs = list(),list()
+    # train_dataset = TimeseriesData.batchify(args, TimeseriesData.trainData, bsz=1)
+    # for channel_idx in range(model.enc_input_size):
+        # mean, cov = fit_norm_distribution_param(args,model,train_dataset[:TimeseriesData.length],channel_idx)
+        # means.append(mean), covs.append(cov)
+    # model_dictionary = {'epoch': max(epoch,start_epoch),
+                        # 'best_loss': best_val_loss,
+                        # 'state_dict': model.state_dict(),
+                        # 'optimizer': optimizer.state_dict(),
+                        # 'args': args,
+                        # 'means': means,
+                        # 'covs': covs,
+						# 'epoch_list': epoch_list,
+						# 't_losses': t_losses,
+						# 'v_losses': v_losses
+                        # }
+    # model.save_checkpoint(model_dictionary, False)
     print('-' * 89)
 
 if __name__=="__main__":

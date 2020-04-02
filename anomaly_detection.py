@@ -21,7 +21,7 @@ def main(args_):
 
     print('-' * 89)
     print("=> loading checkpoint ")
-    checkpoint = torch.load(str(Path('save',args_.data,'checkpoint',args_.filename).with_suffix('.pth')))
+    checkpoint = torch.load(str(Path('save',args_.data,'model_best',args_.filename).with_suffix('.pth'))) #using model with lowest val error
     args = checkpoint['args']
     args.prediction_window_size= args_.prediction_window_size
     args.beta = args_.beta

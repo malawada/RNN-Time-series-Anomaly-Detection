@@ -40,7 +40,7 @@ parser.add_argument('--dropout', type=float, default=0.2,
                     help='dropout applied to layers (0 = no dropout)')
 parser.add_argument('--tied', action='store_true',
                     help='tie the word embedding and softmax weights (deprecated)')
-parser.add_argument('--seed', type=int, default=1111,
+parser.add_argument('--seed', type=int, default=2,
                     help='random seed')
 parser.add_argument('--device', type=str, default='cuda',
                     help='cuda or cpu')
@@ -52,7 +52,7 @@ parser.add_argument('--save_fig', default=True,
                     help='save figure')
 parser.add_argument('--resume','-r',
                     help='use checkpoint model parameters as initial parameters (default: True)',
-                    default=True)
+                    default=False)
 parser.add_argument('--pretrained','-p',
                     help='use checkpoint model parameters and do not train anymore (default: False)',
                     action="store_true")

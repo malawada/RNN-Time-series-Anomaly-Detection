@@ -174,7 +174,7 @@ def main(args_):
                 plt.title('Anomaly Detection on ' + args.data + ' Dataset', fontsize=18, fontweight='bold')
                 plt.tight_layout()
                 plt.xlim([0,len(test_dataset)])
-                plt.savefig(str(save_dir.joinpath('fig_scores_channel'+str(channel_idx)).with_suffix('.png')))
+                plt.savefig(str(save_dir.joinpath('fig_scores_channel'+str(channel_idx)).with_suffix('.svg')))
                 #plt.show()
                 plt.close()
 

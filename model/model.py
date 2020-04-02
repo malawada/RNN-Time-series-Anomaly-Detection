@@ -104,7 +104,6 @@ class RNNPredictor(nn.Module):
         if is_best:
             model_best_dir = Path('save',args.data,'model_best')
             model_best_dir.mkdir(parents=True,exist_ok=True)
-
             shutil.copyfile(checkpoint, model_best_dir.joinpath(args.filename).with_suffix('.pth'))
 
         print('=> checkpoint saved.')
@@ -138,5 +137,9 @@ class RNNPredictor(nn.Module):
         args_.prediction_window_size=args.prediction_window_size
         self.initialize(args_, feature_dim=feature_dim)
         self.load_state_dict(checkpoint['state_dict'])
+        epoch_list = checkpoint['epoch_list']
+        t_losses = checkpoint['t_losses']
+        v_losses = checkpoint['v_losses']
+        
 
-        return args_, start_epoch, best_val_loss
+        return args_, start_epoch, best_val_loss, epoch_list, t_losses, v_losses

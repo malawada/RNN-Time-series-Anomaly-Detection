@@ -26,7 +26,7 @@ parser.add_argument('--weight_decay', type=float, default=1e-4,
                     help='weight decay')
 parser.add_argument('--clip', type=float, default=10,
                     help='gradient clipping')
-parser.add_argument('--epochs', type=int, default=500,
+parser.add_argument('--epochs', type=int, default=600,
                     help='upper epoch limit')
 parser.add_argument('--batch_size', type=int, default=64, metavar='N',
                     help='batch size')
@@ -52,34 +52,34 @@ parser.add_argument('--save_fig', default=True,
                     help='save figure')
 parser.add_argument('--resume','-r',
                     help='use checkpoint model parameters as initial parameters (default: True)',
-                    default=False)
+                    default=True)
 parser.add_argument('--pretrained','-p',
                     help='use checkpoint model parameters and do not train anymore (default: False)',
                     action="store_true")
-parser.add_argument('--prediction_window_size', type=int, default=10,
+parser.add_argument('--prediction_window_size', type=int, default=1,
                     help='prediction_window_size')
 args = parser.parse_args()
 
 
 files = defaultdict()
-# files['IMS_bearings_test1']=("combinedfiles_s4.pkl",
-                        # "combinedfiles_s5.pkl",
-                        # "combinedfiles_s6.pkl",
-                        # "combinedfiles_s7.pkl")
-# files['IMS_bearings_test2']=(["combinedfiles_s0.pkl"])
-# files['IMS_bearings_test3']=(["combinedfiles_s2.pkl"])
-# files['FEMTO_bearings_1_1']=("combinedfiles_accel_s0.pkl",
-				# "combinedfiles_accel_s1.pkl")
-# files['FEMTO_bearings_1_2']=("combinedfiles_accel_s0.pkl",
-				# "combinedfiles_accel_s1.pkl")
-# files['FEMTO_bearings_2_1']=("combinedfiles_accel_s0.pkl",
-				# "combinedfiles_accel_s1.pkl")
-# files['FEMTO_bearings_2_2']=("combinedfiles_accel_s0.pkl",
-				# "combinedfiles_accel_s1.pkl")
-# files['FEMTO_bearings_3_1']=("combinedfiles_accel_s0.pkl",
-				# "combinedfiles_accel_s1.pkl")
-# files['FEMTO_bearings_3_2']=("combinedfiles_accel_s0.pkl",
-				# "combinedfiles_accel_s1.pkl")
+files['IMS_bearings_test1']=("combinedfiles_s4.pkl",
+                        "combinedfiles_s5.pkl",
+                        "combinedfiles_s6.pkl",
+                        "combinedfiles_s7.pkl")
+files['IMS_bearings_test2']=(["combinedfiles_s0.pkl"])
+files['IMS_bearings_test3']=(["combinedfiles_s2.pkl"])
+files['FEMTO_bearings_1_1']=("combinedfiles_accel_s0.pkl",
+				"combinedfiles_accel_s1.pkl")
+files['FEMTO_bearings_1_2']=("combinedfiles_accel_s0.pkl",
+				"combinedfiles_accel_s1.pkl")
+files['FEMTO_bearings_2_1']=("combinedfiles_accel_s0.pkl",
+				"combinedfiles_accel_s1.pkl")
+files['FEMTO_bearings_2_2']=("combinedfiles_accel_s0.pkl",
+				"combinedfiles_accel_s1.pkl")
+files['FEMTO_bearings_3_1']=("combinedfiles_accel_s0.pkl",
+				"combinedfiles_accel_s1.pkl")
+files['FEMTO_bearings_3_2']=("combinedfiles_accel_s0.pkl",
+				"combinedfiles_accel_s1.pkl")
 files['Bearing1_3']=("Bearing1_3combinedfiles_accel_s0.pkl",
 				"Bearing1_3combinedfiles_accel_s1.pkl")
 files['Bearing1_4']=("Bearing1_4combinedfiles_accel_s0.pkl",
@@ -102,7 +102,13 @@ files['Bearing2_7']=("Bearing2_7combinedfiles_accel_s0.pkl",
 				"Bearing2_7combinedfiles_accel_s1.pkl")
 files['Bearing3_3']=("Bearing3_3combinedfiles_accel_s0.pkl",
 				"Bearing3_3combinedfiles_accel_s1.pkl")
-               
+                
+#RETRAIN:				
+# files['Bearing1_4']=(["Bearing1_4combinedfiles_accel_s1.pkl"])
+# files['Bearing2_3']=("Bearing2_3combinedfiles_accel_s0.pkl",
+				# "Bearing2_3combinedfiles_accel_s1.pkl")
+# files['Bearing2_5']=(["Bearing2_5combinedfiles_accel_s1.pkl"])
+                
 
 for dir, filelist in files.items():
     for f in filelist:
@@ -115,7 +121,7 @@ for dir, filelist in files.items():
                 print("EXCEPTION OCCURRED")
                 print(err)
                 with open("errlog.txt",'a+') as f:
-                    f.write(err)
+                    f.write(str(err))
                     f.write("\n\n")
         else:
             print("File does not exist! filename:" + dir + '/' + f)

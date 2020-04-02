@@ -8,3 +8,7 @@ RNN/*
 raw_dataset/*
 *.zip
 anomaly_dataset/*
+*.pkl
+*.csv
+*.pkl
+*.png

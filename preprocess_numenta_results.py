@@ -13,4 +13,4 @@ for path in bearing_sets:
     result = pd.read_csv(path)
     path = path.split("\\")
     os.makedirs('numenta_dataset\\'+ path[1], exist_ok=True)
-    result.to_csv('numenta_dataset\\'+ path[1] + "\\"+ path[-1], columns=['timestamp', 'raw_score'], header=['timestamp','value'], index=False)
+    result.to_csv('numenta_dataset\\'+ path[1] + "\\"+ path[-1][8:], columns=['timestamp', 'raw_score'], header=['timestamp','value'], index=False)

@@ -9,7 +9,8 @@ from torch import optim
 from matplotlib import pyplot as plt
 from pathlib import Path
 from anomalyDetector import fit_norm_distribution_param
-
+import wandb
+from collections import defaultdict
 
 ###############################################################################
 # Training code
@@ -218,7 +219,8 @@ def main(args):
     # Set the random seed manually for reproducibility.
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
-
+    wandb.init(project="lstm-predictor")
+    wandb.config.update(args)
     ###############################################################################
     # Load data
     ###############################################################################
@@ -270,7 +272,7 @@ def main(args):
         # At any point you can hit Ctrl + C to break out of training early.
         try:
             for epoch in range(start_epoch, args.epochs+1):
-
+                metrics = defaultdict()
                 epoch_start_time = time.time()
                 train_loss = train(args,model,train_dataset,epoch, optimizer, criterion)
                 val_loss = evaluate(args,model,test_dataset, criterion)
@@ -281,7 +283,9 @@ def main(args):
                 t_losses.append(train_loss)
                 v_losses.append(val_loss)
                 generate_output(args,epoch,model,gen_dataset,TimeseriesData, startPoint=1500)
-
+                metrics['train_loss'] = train_loss
+                metrics['val_loss'] = val_loss
+                wandb.log(metrics)
                 if epoch%args.save_interval==0:
                     # Save the model if the validation loss is the best we've seen so far.
                     is_best = val_loss < best_val_loss

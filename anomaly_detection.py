@@ -28,7 +28,7 @@ def main(args_):
     args.save_fig = args_.save_fig
     args.compensate = args_.compensate
     print("=> loaded checkpoint")
-
+    os.makedirs(os.path.join("result", args_.data, args_.filename[:-4]), exist_ok=True)
 
     # Set the random seed manually for reproducibility.
     torch.manual_seed(args.seed)
@@ -215,7 +215,7 @@ def main(args_):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch RNN Anomaly Detection Model')
-    parser.add_argument('--prediction_window_size', type=int, default=10,
+    parser.add_argument('--prediction_window_size', type=int, default=1,
                         help='prediction_window_size')
     parser.add_argument('--data', type=str, default='IMS_bearings_test2',
                         help='type of the dataset (ecg, gesture, power_demand, space_shuttle, respiration, nyc_taxi')
@@ -227,5 +227,7 @@ if __name__ == "__main__":
                         help='compensate anomaly score using anomaly score esimation')
     parser.add_argument('--beta', type=float, default=1.0,
                         help='beta value for f-beta score')
+    parser.add_argument('--model', type=str, default='GRU',
+                        help='type of recurrent net (RNN_TANH, RNN_RELU, LSTM, GRU, SRU)')
     args_ = parser.parse_args()
-    main(args)
+    main(args_)

@@ -1,6 +1,6 @@
 save/*
 RNN/*
-
+wandb/*
 *.pyc
 ./idea
 *.pth.tar

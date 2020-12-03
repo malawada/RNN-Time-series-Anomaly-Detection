@@ -222,7 +222,7 @@ def main(args):
     # Set the random seed manually for reproducibility.
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
-    wandb.init(project="lstm-predictor", config=args)
+    run = wandb.init(project="lstm-predictor", config=args, reinit=True)
 
     ###############################################################################
     # Load data
@@ -307,18 +307,18 @@ def main(args):
         except KeyboardInterrupt:
             print('-' * 89)
             print('Exiting from training early')
-    plt.figure(figsize=(15,5))
-    plt.plot(epoch_list, t_losses, color='green', label="Train Loss")
-    plt.plot(epoch_list, v_losses, color='blue', label ="Validation Loss")
-    plt.xlabel('Epoch',fontsize=15)
-    plt.ylabel('Loss',fontsize=15)
-    plt.title('Loss vs. Epoch ' + args.data + ' Dataset', fontsize=18, fontweight='bold')
-    plt.legend()
-    plt.tight_layout()
-    save_dir = Path('result',args.data,args.filename).with_suffix('').joinpath('fig_prediction')
-    save_dir.mkdir(parents=True,exist_ok=True)
-    plt.savefig(save_dir.joinpath('fig_val_epoch').with_suffix('.svg'))
-    plt.close()
+    # plt.figure(figsize=(15,5))
+    # plt.plot(epoch_list, t_losses, color='green', label="Train Loss")
+    # plt.plot(epoch_list, v_losses, color='blue', label ="Validation Loss")
+    # plt.xlabel('Epoch',fontsize=15)
+    # plt.ylabel('Loss',fontsize=15)
+    # plt.title('Loss vs. Epoch ' + args.data + ' Dataset', fontsize=18, fontweight='bold')
+    # plt.legend()
+    # plt.tight_layout()
+    # save_dir = Path('result',args.data,args.filename).with_suffix('').joinpath('fig_prediction')
+    # save_dir.mkdir(parents=True,exist_ok=True)
+    # plt.savefig(save_dir.joinpath('fig_val_epoch').with_suffix('.svg'))
+    # plt.close()
 
     # Calculate mean and covariance for each channel's prediction errors, and save them with the trained model
     # print('=> calculating mean and covariance')
@@ -340,6 +340,7 @@ def main(args):
                         # }
     # model.save_checkpoint(model_dictionary, False)
     print('-' * 89)
+    run.finish()
 
 if __name__=="__main__":
 

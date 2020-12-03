@@ -1,7 +1,7 @@
 import argparse
 import time
 import torch
-import os
+import os, pdb
 import torch.nn as nn
 import preprocess_data
 from model import model as model_def
@@ -115,7 +115,7 @@ def evaluate_1step_pred(args, model, test_dataset):
     return total_loss / nbatch
 
 def train(args, model, train_dataset,epoch, optimizer, criterion):
-
+    
     with torch.enable_grad():
         # Turn on training mode which enables dropout.
         model.train()
@@ -125,6 +125,7 @@ def train(args, model, train_dataset,epoch, optimizer, criterion):
         hidden = model.init_hidden(args.batch_size)
         batch = 0 
         for batch, i in enumerate(range(0, train_dataset.size(0) - 1, args.bptt)):
+            #pdb.set_trace()
             inputSeq, targetSeq = get_batch(args,train_dataset, i)
             # inputSeq: [ seq_len * batch_size * feature_size ]
             # targetSeq: [ seq_len * batch_size * feature_size ]
@@ -145,6 +146,7 @@ def train(args, model, train_dataset,epoch, optimizer, criterion):
                 hids1.append(hid)
             outSeq1 = torch.cat(outVals,dim=0)
             hids1 = torch.cat(hids1,dim=0)
+            targetSeq = targetSeq.contiguous()
             loss1 = criterion(outSeq1.view(args.batch_size,-1), targetSeq.view(args.batch_size,-1))
 
             '''Loss2: Teacher forcing loss'''
@@ -197,6 +199,7 @@ def evaluate(args, model, test_dataset, criterion):
                 hids1.append(hid)
             outSeq1 = torch.cat(outVals,dim=0)
             hids1 = torch.cat(hids1,dim=0)
+            targetSeq = targetSeq.contiguous()
             loss1 = criterion(outSeq1.view(args.batch_size,-1), targetSeq.view(args.batch_size,-1))
 
             '''Loss2: Teacher forcing loss'''
@@ -219,8 +222,8 @@ def main(args):
     # Set the random seed manually for reproducibility.
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
-    wandb.init(project="lstm-predictor")
-    wandb.config.update(args)
+    wandb.init(project="lstm-predictor", config=args)
+
     ###############################################################################
     # Load data
     ###############################################################################
@@ -282,7 +285,7 @@ def main(args):
                 epoch_list.append(epoch)
                 t_losses.append(train_loss)
                 v_losses.append(val_loss)
-                generate_output(args,epoch,model,gen_dataset,TimeseriesData, startPoint=1500)
+                #generate_output(args,epoch,model,gen_dataset,TimeseriesData, startPoint=1500)
                 metrics['train_loss'] = train_loss
                 metrics['val_loss'] = val_loss
                 wandb.log(metrics)

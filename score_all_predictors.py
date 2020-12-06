@@ -17,6 +17,7 @@ parser.add_argument('--compensate', action='store_true',
                     help='compensate anomaly score using anomaly score esimation')
 parser.add_argument('--beta', type=float, default=1.0,
                     help='beta value for f-beta score')
+parser.add_argument('--model', type=str, default="LSTM")
                     
 args = parser.parse_args()
 
@@ -35,6 +36,8 @@ files['FEMTO_bearings_2_1']=("combinedfiles_accel_s0.pkl",
 							"combinedfiles_accel_s1.pkl")
 files['FEMTO_bearings_2_2']=("combinedfiles_accel_s0.pkl",
 							"combinedfiles_accel_s1.pkl")
+files['Bearing2_3']=("Bearing2_3combinedfiles_accel_s0.pkl",
+				 "Bearing2_3combinedfiles_accel_s1.pkl")
 files['FEMTO_bearings_3_1']=("combinedfiles_accel_s0.pkl",
 							"combinedfiles_accel_s1.pkl")
 files['FEMTO_bearings_3_2']=("combinedfiles_accel_s0.pkl",
@@ -51,6 +54,7 @@ files['Bearing1_7']=("Bearing1_7combinedfiles_accel_s0.pkl",
 					"Bearing1_7combinedfiles_accel_s1.pkl")
 files['Bearing2_4']=("Bearing2_4combinedfiles_accel_s0.pkl",
 					"Bearing2_4combinedfiles_accel_s1.pkl")
+files['Bearing2_5']=("Bearing2_5combinedfiles_accel_s1.pkl",
 					"Bearing2_5combinedfiles_accel_s0.pkl")
 files['Bearing2_6']=("Bearing2_6combinedfiles_accel_s0.pkl",
 					"Bearing2_6combinedfiles_accel_s1.pkl")

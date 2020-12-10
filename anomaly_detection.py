@@ -1,16 +1,17 @@
 import argparse
-import os
+import os, sys
 import torch
 import pickle
 import preprocess_data
 import pandas as pd
 from model import model as imported_model
 from torch import optim
+from torch import nn
 from pathlib import Path
 from matplotlib import pyplot as plt
 import numpy as np
 import pdb
-from sklearn.svm import SVR
+from sklearn.svm import SVR, LinearSVR
 from sklearn.model_selection import GridSearchCV
 from anomalyDetector import fit_norm_distribution_param
 from anomalyDetector import anomalyScore
@@ -21,14 +22,17 @@ def main(args_):
 
     print('-' * 89)
     print("=> loading checkpoint ")
-    checkpoint = torch.load(str(Path('save',args_.model,args_.data,'model_best',args_.filename).with_suffix('.pth'))) #using model with lowest val error
+    checkpoint = torch.load(str(Path(args_.save_path,args_.model,args_.data,'model_best',args_.filename).with_suffix('.pth'))) #using model with lowest val error
     args = checkpoint['args']
     args.prediction_window_size= args_.prediction_window_size
     args.beta = args_.beta
     args.save_fig = args_.save_fig
     args.compensate = args_.compensate
+    args.use_SVR = args_.use_SVR
+    args.device = args_.device
+    args.dropout = 0.0
     print("=> loaded checkpoint")
-    os.makedirs(os.path.join("result", args_.data, args_.filename[:-4]), exist_ok=True)
+    os.makedirs(os.path.join("result", args.model, args_.data, args_.filename[:-4]), exist_ok=True)
 
     # Set the random seed manually for reproducibility.
     torch.manual_seed(args.seed)
@@ -52,15 +56,34 @@ def main(args_):
                                rnn_hid_size = args.nhid,
                                dec_out_size=nfeatures,
                                nlayers = args.nlayers,
-                               res_connection=args.res_connection).to(args.device)
+                               dropout=0.0,
+                               res_connection=args.res_connection).to(torch.device(args.device))
     model.load_state_dict(checkpoint['state_dict'])
-    #del checkpoint
+
+    optimizer = optim.Adam(model.parameters(), lr= args.lr,weight_decay=args.weight_decay)
+    criterion = nn.MSELoss()
 
     scores, predicted_scores, precisions, recalls, f_betas = list(), list(), list(), list(), list()
     targets, mean_predictions, oneStep_predictions, Nstep_predictions = list(), list(), list(), list()
     try:
         # For each channel in the dataset
         for channel_idx in range(nfeatures):
+
+            if args.use_SVR:
+                save_dir = Path('result', args.model, args.data, args.filename).with_suffix('')
+                save_dir.mkdir(parents=True, exist_ok=True)
+                print("replacing model with an svr predictor.")
+                model = LinearSVR(max_iter=5000)#GridSearchCV(LinearSVR(), cv=5,param_grid={"C": [1e0, 1e1, 1e2], "loss":["epsilon_insensitive", "squared_epsilon_insensitive"], "max_iter":['2000']}, n_jobs=1)
+                td = train_dataset.squeeze(-1).cpu()
+                model.fit(td, torch.roll(td.squeeze(-1), -1))
+                
+                print('=> calculating anomaly scores')
+                score = model.predict(test_dataset.squeeze(-1).cpu())
+                scoreframe = pd.DataFrame(score)
+                scoreframe = scoreframe / scoreframe.max()
+                scoreframe.to_csv(save_dir.joinpath('scores.csv'))
+                break
+
             ''' 1. Load mean and covariance if they are pre-calculated, if not calculate them. '''
             # Mean and covariance are calculated on train dataset.
             if 'means' in checkpoint.keys() and 'covs' in checkpoint.keys():
@@ -77,27 +100,31 @@ def main(args_):
             if args.compensate:
                 print('=> training an SVR as anomaly score predictor')
                 train_score, _, _, hiddens, _, exectime = anomalyScore(args, model, train_dataset, mean, cov, channel_idx=channel_idx)
-                score_predictor = GridSearchCV(SVR(), cv=5,param_grid={"C": [1e0, 1e1, 1e2],"gamma": np.logspace(-1, 1, 3)})
+                
+                #score_predictor = GridSearchCV(SVR(), cv=5,param_grid={"C": [1e0, 1e1, 1e2],"gamma": np.logspace(-1, 1, 3)}, n_jobs=8)
+                #score_predictor = GridSearchCV(LinearSVR(), cv=5,param_grid={"C": [1e0, 1e1, 1e2], "loss":["epsilon_insensitive", "squared_epsilon_insensitive"], "max_iter":['2000']}, n_jobs=8)
                 score_predictor.fit(torch.cat(hiddens,dim=0).numpy(), train_score.cpu().numpy())
             else:
                 score_predictor=None
+
 
             ''' 3. Calculate anomaly scores'''
             # Anomaly scores are calculated on the test dataset
             # given the mean and the covariance calculated on the train dataset
             print('=> calculating anomaly scores')
-            score, sorted_prediction, sorted_error, _, predicted_score, exectime = anomalyScore(args, model, test_dataset, mean, cov,
-                                                                                      score_predictor=score_predictor,
-                                                                                      channel_idx=channel_idx)
+            score, sorted_prediction, sorted_error, _, predicted_score, exectime = anomalyScore(args, model, test_dataset, mean, cov, optimizer, criterion,
+                                                                                    online=True,
+                                                                                    score_predictor=score_predictor,
+                                                                                    channel_idx=channel_idx)
 
             ''' 4. Evaluate the result '''
             # The obtained anomaly scores are evaluated by measuring precision, recall, and f_beta scores
             # The precision, recall, f_beta scores are are calculated repeatedly,
             # sampling the threshold from 1 to the maximum anomaly score value, either equidistantly or logarithmically.
             print('=> calculating precision, recall, and f_beta')
-            precision, recall, f_beta = get_precision_recall(args, score, num_samples=1000, beta=args.beta,
+            precision, recall, f_beta = get_precision_recall(args, score, num_samples=10, beta=args.beta,
                                                              label=TimeseriesData.testLabel.to(args.device))
-            print(f_beta)
+            #print(f_beta)
             #print('data: ',args.data,' filename: ',args.filename,
             #      ' f-beta (no compensation): ', f_beta.max().item(),' beta: ',args.beta)
             if args.compensate:
@@ -107,7 +134,7 @@ def main(args_):
                 print(f_beta)
                 #print('data: ',args.data,' filename: ',args.filename,
                 #      ' f-beta    (compensation): ', f_beta.max().item(),' beta: ',args.beta)
-            with open(os.path.join("result", args_.data, args_.filename[:-4], "exectime.txt"), mode='w') as f:
+            with open(os.path.join("result", args.model, args_.data, args_.filename[:-4], "exectime.txt"), mode='w') as f:
                 f.write(str(exectime))
 
             target = preprocess_data.reconstruct(test_dataset.cpu()[:, 0, channel_idx],
@@ -126,14 +153,14 @@ def main(args_):
             sorted_errors_mean *= TimeseriesData.std[channel_idx]
             sorted_errors_mean = sorted_errors_mean.numpy()
             score = score.cpu()
-            scores.append(score), targets.append(targets), predicted_scores.append(predicted_score)
+            scores.append(score), targets.append(target), predicted_scores.append(predicted_score)
             mean_predictions.append(mean_prediction), oneStep_predictions.append(oneStep_prediction)
             Nstep_predictions.append(Nstep_prediction)
             precisions.append(precision), recalls.append(recall), f_betas.append(f_beta)
 
 
             if args.save_fig:
-                save_dir = Path('result',args.data,args.filename).with_suffix('').joinpath('fig_detection')
+                save_dir = Path('result', args.model, args.data,args.filename).with_suffix('').joinpath('fig_detection')
                 save_dir.mkdir(parents=True,exist_ok=True)
                 plt.plot(precision.cpu().numpy(),label='precision')
                 plt.plot(recall.cpu().numpy(),label='recall')
@@ -183,30 +210,30 @@ def main(args_):
         print('-' * 89)
         print('Exiting from training early')
 
-
-    print('=> saving the results as pickle extensions')
-    save_dir = Path('result', args.data, args.filename).with_suffix('')
-    save_dir.mkdir(parents=True, exist_ok=True)
-    pickle.dump(targets, open(str(save_dir.joinpath('target.pkl')),'wb'))
-    pickle.dump(mean_predictions, open(str(save_dir.joinpath('mean_predictions.pkl')),'wb'))
-    pickle.dump(oneStep_predictions, open(str(save_dir.joinpath('oneStep_predictions.pkl')),'wb'))
-    pickle.dump(Nstep_predictions, open(str(save_dir.joinpath('Nstep_predictions.pkl')),'wb'))
-    pickle.dump(scores, open(str(save_dir.joinpath('score.pkl')),'wb'))
-    pickle.dump(predicted_scores, open(str(save_dir.joinpath('predicted_scores.pkl')),'wb'))
-    pickle.dump(precisions, open(str(save_dir.joinpath('precision.pkl')),'wb'))
-    pickle.dump(recalls, open(str(save_dir.joinpath('recall.pkl')),'wb'))
-    pickle.dump(f_betas, open(str(save_dir.joinpath('f_beta.pkl')),'wb'))
-    pd.DataFrame(targets).T.to_csv(save_dir.joinpath('targets.csv'))
-    pd.DataFrame(mean_predictions).T.to_csv(save_dir.joinpath('mean_predictions.csv'))
-    pd.DataFrame(oneStep_predictions).T.to_csv(save_dir.joinpath('oneStep_predictions.csv'))
-    pd.DataFrame(Nstep_predictions).T.to_csv(save_dir.joinpath('Nstep_predictions.csv'))
-    scoreframe = pd.DataFrame(scores[0].numpy())
-    scoreframe = scoreframe / scoreframe.max()
-    scoreframe.to_csv(save_dir.joinpath('scores.csv'))
-    pd.DataFrame(precisions).T.to_csv(save_dir.joinpath('precisions.csv'))
-    pd.DataFrame(recalls).T.to_csv(save_dir.joinpath('recalls.csv'))
-    pd.DataFrame(f_betas).T.to_csv(save_dir.joinpath('f_betas.csv'))
-    pd.DataFrame(predicted_scores).T.to_csv(save_dir.joinpath('predicted_scores.csv'))
+    if not args.use_SVR:
+        print('=> saving the results as pickle extensions')
+        save_dir = Path('result', args.model, args.data, args.filename).with_suffix('')
+        save_dir.mkdir(parents=True, exist_ok=True)
+        pickle.dump(targets, open(str(save_dir.joinpath('target.pkl')),'wb'))
+        pickle.dump(mean_predictions, open(str(save_dir.joinpath('mean_predictions.pkl')),'wb'))
+        pickle.dump(oneStep_predictions, open(str(save_dir.joinpath('oneStep_predictions.pkl')),'wb'))
+        pickle.dump(Nstep_predictions, open(str(save_dir.joinpath('Nstep_predictions.pkl')),'wb'))
+        pickle.dump(scores, open(str(save_dir.joinpath('score.pkl')),'wb'))
+        pickle.dump(predicted_scores, open(str(save_dir.joinpath('predicted_scores.pkl')),'wb'))
+        pickle.dump(precisions, open(str(save_dir.joinpath('precision.pkl')),'wb'))
+        pickle.dump(recalls, open(str(save_dir.joinpath('recall.pkl')),'wb'))
+        pickle.dump(f_betas, open(str(save_dir.joinpath('f_beta.pkl')),'wb'))
+        pd.DataFrame(targets).T.to_csv(save_dir.joinpath('targets.csv'))
+        pd.DataFrame(mean_predictions).T.to_csv(save_dir.joinpath('mean_predictions.csv'))
+        pd.DataFrame(oneStep_predictions).T.to_csv(save_dir.joinpath('oneStep_predictions.csv'))
+        pd.DataFrame(Nstep_predictions).T.to_csv(save_dir.joinpath('Nstep_predictions.csv'))
+        scoreframe = pd.DataFrame(scores[0].numpy())
+        scoreframe = scoreframe / scoreframe.max()
+        scoreframe.to_csv(save_dir.joinpath('scores.csv'))
+        pd.DataFrame(precisions).T.to_csv(save_dir.joinpath('precisions.csv'))
+        pd.DataFrame(recalls).T.to_csv(save_dir.joinpath('recalls.csv'))
+        #pd.DataFrame(f_betas).T.to_csv(save_dir.joinpath('f_betas.csv'))
+        pd.DataFrame(predicted_scores).T.to_csv(save_dir.joinpath('predicted_scores.csv'))
 
     print('-' * 89)
 
@@ -229,5 +256,7 @@ if __name__ == "__main__":
                         help='beta value for f-beta score')
     parser.add_argument('--model', type=str, default='GRU',
                         help='type of recurrent net (RNN_TANH, RNN_RELU, LSTM, GRU, SRU)')
+    parser.add_argument('--save_path', type=str, default='save')
+
     args_ = parser.parse_args()
     main(args_)

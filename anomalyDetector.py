@@ -37,22 +37,32 @@ def fit_norm_distribution_param(args, model, train_dataset, channel_idx=0):
     return mean, cov
 
 
-def anomalyScore(args, model, dataset, mean, cov, channel_idx=0, score_predictor=None):
+def anomalyScore(args, model, dataset, mean, cov, optimizer, criterion, online=True, channel_idx=0, score_predictor=None):
     predictions = []
     rearranged = []
     errors = []
     hiddens = []
     predicted_scores = []
-    
     start = time.time()
     
-    with torch.no_grad():
+    #with torch.no_grad():
+    with torch.enable_grad() if online else torch.no_grad:
+        model.train() if online else model.eval()
         # Turn on evaluation mode which disables dropout.
-        model.eval()
         pasthidden = model.init_hidden(1)
-        
+
         for t in range(len(dataset)):
+            optimizer.zero_grad()
             out, hidden = model.forward(dataset[t].unsqueeze(0), pasthidden)
+            if online:
+                if(t==len(dataset)-1):
+                    loss = criterion(out, dataset[t].unsqueeze(0))
+                else:
+                    loss = criterion(out, dataset[t+1].unsqueeze(0))
+                loss.backward()
+                optimizer.step()
+            
+
             predictions.append([])
             rearranged.append([])
             errors.append([])
@@ -90,7 +100,7 @@ def anomalyScore(args, model, dataset, mean, cov, channel_idx=0, score_predictor
     errors = torch.cat(errors,dim=0)
     
     exectime = time.time() - start
-
+    print('execution time: ' + str(exectime))
     return scores, rearranged, errors, hiddens, predicted_scores, exectime
 
 

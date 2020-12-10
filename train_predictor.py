@@ -251,9 +251,9 @@ def main(args):
     criterion = nn.MSELoss()
     
     # Loop over epochs.
-    if((args.resume or args.pretrained) and os.path.exists(str(Path('save', args.data, 'checkpoint', args.filename).with_suffix('.pth')))):
+    if((args.resume or args.pretrained) and os.path.exists(str(Path(args.save_path, args.data, 'checkpoint', args.filename).with_suffix('.pth')))):
         print("=> loading checkpoint ")
-        checkpoint = torch.load(Path('save', args.data, 'checkpoint', args.filename).with_suffix('.pth'))
+        checkpoint = torch.load(Path(args.save_path, args.data, 'checkpoint', args.filename).with_suffix('.pth'))
         args, start_epoch, best_val_loss, epoch_list, t_losses, v_losses = model.load_checkpoint(args,checkpoint,feature_dim)
         optimizer.load_state_dict((checkpoint['optimizer']))
         del checkpoint
@@ -389,6 +389,7 @@ if __name__=="__main__":
                         help='report interval')
     parser.add_argument('--save_interval', type=int, default=10, metavar='N',
                         help='save interval')
+    parser.add_argument('--save_path', type=str, default='save')
     parser.add_argument('--save_fig', default=True,
                         help='save figure')
     parser.add_argument('--resume','-r',

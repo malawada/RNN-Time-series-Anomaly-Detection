@@ -20,19 +20,19 @@ parser.add_argument('--nlayers', type=int, default=2,
                     help='number of layers')
 parser.add_argument('--res_connection', action='store_true',
                     help='residual connection')
-parser.add_argument('--lr', type=float, default=0.0002,
+parser.add_argument('--lr', type=float, default=0.0005,
                     help='initial learning rate')
 parser.add_argument('--weight_decay', type=float, default=1e-4,
                     help='weight decay')
 parser.add_argument('--clip', type=float, default=10,
                     help='gradient clipping')
-parser.add_argument('--epochs', type=int, default=600,
+parser.add_argument('--epochs', type=int, default=200,
                     help='upper epoch limit')
-parser.add_argument('--batch_size', type=int, default=64, metavar='N',
+parser.add_argument('--batch_size', type=int, default=32, metavar='N',
                     help='batch size')
-parser.add_argument('--eval_batch_size', type=int, default=64, metavar='N',
+parser.add_argument('--eval_batch_size', type=int, default=32, metavar='N',
                     help='eval_batch size')
-parser.add_argument('--bptt', type=int, default=50,
+parser.add_argument('--bptt', type=int, default=100,
                     help='sequence length')
 parser.add_argument('--teacher_forcing_ratio', type=float, default=0.7,
                     help='teacher forcing ratio (deprecated)')
@@ -46,8 +46,9 @@ parser.add_argument('--device', type=str, default='cuda',
                     help='cuda or cpu')
 parser.add_argument('--log_interval', type=int, default=10, metavar='N',
                     help='report interval')
-parser.add_argument('--save_interval', type=int, default=10, metavar='N',
+parser.add_argument('--save_interval', type=int, default=5, metavar='N',
                     help='save interval')
+parser.add_argument('--save_path', type=str, default='save')
 parser.add_argument('--save_fig', default=True,
                     help='save figure')
 parser.add_argument('--resume','-r',

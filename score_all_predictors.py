@@ -18,6 +18,10 @@ parser.add_argument('--compensate', action='store_true',
 parser.add_argument('--beta', type=float, default=1.0,
                     help='beta value for f-beta score')
 parser.add_argument('--model', type=str, default="LSTM")
+parser.add_argument('--device', type=str, default="cuda")
+parser.add_argument('--use_SVR', action='store_true')
+parser.add_argument('--learning_rate', type=float, default=0.0002)
+parser.add_argument('--save_path', type=str, default='save')
                     
 args = parser.parse_args()
 

@@ -26,13 +26,14 @@ def main(args_):
     args = checkpoint['args']
     args.prediction_window_size= args_.prediction_window_size
     args.beta = args_.beta
-    args.save_fig = args_.save_fig
+    args.save_fig = False #args_.save_fig
     args.compensate = args_.compensate
     args.use_SVR = args_.use_SVR
     args.device = args_.device
     args.dropout = 0.0
+    args.result_path = args_.result_path
     print("=> loaded checkpoint")
-    os.makedirs(os.path.join("result", args.model, args_.data, args_.filename[:-4]), exist_ok=True)
+    os.makedirs(os.path.join(args.result_path, args.model, args_.data, args_.filename[:-4]), exist_ok=True)
 
     # Set the random seed manually for reproducibility.
     torch.manual_seed(args.seed)
@@ -70,7 +71,7 @@ def main(args_):
         for channel_idx in range(nfeatures):
 
             if args.use_SVR:
-                save_dir = Path('result', args.model, args.data, args.filename).with_suffix('')
+                save_dir = Path(args.result_path, args.model, args.data, args.filename).with_suffix('')
                 save_dir.mkdir(parents=True, exist_ok=True)
                 print("replacing model with an svr predictor.")
                 model = LinearSVR(max_iter=5000)#GridSearchCV(LinearSVR(), cv=5,param_grid={"C": [1e0, 1e1, 1e2], "loss":["epsilon_insensitive", "squared_epsilon_insensitive"], "max_iter":['2000']}, n_jobs=1)
@@ -134,7 +135,7 @@ def main(args_):
                 print(f_beta)
                 #print('data: ',args.data,' filename: ',args.filename,
                 #      ' f-beta    (compensation): ', f_beta.max().item(),' beta: ',args.beta)
-            with open(os.path.join("result", args.model, args_.data, args_.filename[:-4], "exectime.txt"), mode='w') as f:
+            with open(os.path.join(args.result_path, args.model, args_.data, args_.filename[:-4], "exectime.txt"), mode='w') as f:
                 f.write(str(exectime))
 
             target = preprocess_data.reconstruct(test_dataset.cpu()[:, 0, channel_idx],
@@ -160,7 +161,7 @@ def main(args_):
 
 
             if args.save_fig:
-                save_dir = Path('result', args.model, args.data,args.filename).with_suffix('').joinpath('fig_detection')
+                save_dir = Path(args.result_path, args.model, args.data,args.filename).with_suffix('').joinpath('fig_detection')
                 save_dir.mkdir(parents=True,exist_ok=True)
                 plt.plot(precision.cpu().numpy(),label='precision')
                 plt.plot(recall.cpu().numpy(),label='recall')
@@ -201,7 +202,7 @@ def main(args_):
                 plt.title('Anomaly Detection on ' + args.data + ' Dataset', fontsize=18, fontweight='bold')
                 plt.tight_layout()
                 plt.xlim([0,len(test_dataset)])
-                plt.savefig(str(save_dir.joinpath('fig_scores_channel'+str(channel_idx)).with_suffix('.svg')))
+                #plt.savefig(str(save_dir.joinpath('fig_scores_channel'+str(channel_idx)).with_suffix('.svg')))
                 #plt.show()
                 plt.close()
 
@@ -212,28 +213,28 @@ def main(args_):
 
     if not args.use_SVR:
         print('=> saving the results as pickle extensions')
-        save_dir = Path('result', args.model, args.data, args.filename).with_suffix('')
+        save_dir = Path(args.result_path, args.model, args.data, args.filename).with_suffix('')
         save_dir.mkdir(parents=True, exist_ok=True)
-        pickle.dump(targets, open(str(save_dir.joinpath('target.pkl')),'wb'))
-        pickle.dump(mean_predictions, open(str(save_dir.joinpath('mean_predictions.pkl')),'wb'))
-        pickle.dump(oneStep_predictions, open(str(save_dir.joinpath('oneStep_predictions.pkl')),'wb'))
-        pickle.dump(Nstep_predictions, open(str(save_dir.joinpath('Nstep_predictions.pkl')),'wb'))
-        pickle.dump(scores, open(str(save_dir.joinpath('score.pkl')),'wb'))
-        pickle.dump(predicted_scores, open(str(save_dir.joinpath('predicted_scores.pkl')),'wb'))
-        pickle.dump(precisions, open(str(save_dir.joinpath('precision.pkl')),'wb'))
-        pickle.dump(recalls, open(str(save_dir.joinpath('recall.pkl')),'wb'))
-        pickle.dump(f_betas, open(str(save_dir.joinpath('f_beta.pkl')),'wb'))
-        pd.DataFrame(targets).T.to_csv(save_dir.joinpath('targets.csv'))
-        pd.DataFrame(mean_predictions).T.to_csv(save_dir.joinpath('mean_predictions.csv'))
-        pd.DataFrame(oneStep_predictions).T.to_csv(save_dir.joinpath('oneStep_predictions.csv'))
-        pd.DataFrame(Nstep_predictions).T.to_csv(save_dir.joinpath('Nstep_predictions.csv'))
+        # pickle.dump(targets, open(str(save_dir.joinpath('target.pkl')),'wb'))
+        # pickle.dump(mean_predictions, open(str(save_dir.joinpath('mean_predictions.pkl')),'wb'))
+        # pickle.dump(oneStep_predictions, open(str(save_dir.joinpath('oneStep_predictions.pkl')),'wb'))
+        # pickle.dump(Nstep_predictions, open(str(save_dir.joinpath('Nstep_predictions.pkl')),'wb'))
+        # pickle.dump(scores, open(str(save_dir.joinpath('score.pkl')),'wb'))
+        # pickle.dump(predicted_scores, open(str(save_dir.joinpath('predicted_scores.pkl')),'wb'))
+        # pickle.dump(precisions, open(str(save_dir.joinpath('precision.pkl')),'wb'))
+        # pickle.dump(recalls, open(str(save_dir.joinpath('recall.pkl')),'wb'))
+        # pickle.dump(f_betas, open(str(save_dir.joinpath('f_beta.pkl')),'wb'))
+        # pd.DataFrame(targets).T.to_csv(save_dir.joinpath('targets.csv'))
+        # pd.DataFrame(mean_predictions).T.to_csv(save_dir.joinpath('mean_predictions.csv'))
+        # pd.DataFrame(oneStep_predictions).T.to_csv(save_dir.joinpath('oneStep_predictions.csv'))
+        # pd.DataFrame(Nstep_predictions).T.to_csv(save_dir.joinpath('Nstep_predictions.csv'))
         scoreframe = pd.DataFrame(scores[0].numpy())
         scoreframe = scoreframe / scoreframe.max()
         scoreframe.to_csv(save_dir.joinpath('scores.csv'))
-        pd.DataFrame(precisions).T.to_csv(save_dir.joinpath('precisions.csv'))
-        pd.DataFrame(recalls).T.to_csv(save_dir.joinpath('recalls.csv'))
+        # pd.DataFrame(precisions).T.to_csv(save_dir.joinpath('precisions.csv'))
+        # pd.DataFrame(recalls).T.to_csv(save_dir.joinpath('recalls.csv'))
         #pd.DataFrame(f_betas).T.to_csv(save_dir.joinpath('f_betas.csv'))
-        pd.DataFrame(predicted_scores).T.to_csv(save_dir.joinpath('predicted_scores.csv'))
+        #pd.DataFrame(predicted_scores).T.to_csv(save_dir.joinpath('predicted_scores.csv'))
 
     print('-' * 89)
 

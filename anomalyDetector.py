@@ -48,7 +48,7 @@ def anomalyScore(args, model, dataset, mean, cov, optimizer, criterion, online=T
     #with torch.no_grad():
     with torch.enable_grad() if online else torch.no_grad:
         model.train() if online else model.eval()
-        # Turn on evaluation mode which disables dropout.
+        
         pasthidden = model.init_hidden(1)
 
         for t in range(len(dataset)):

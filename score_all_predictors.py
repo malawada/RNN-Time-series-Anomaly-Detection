@@ -22,6 +22,7 @@ parser.add_argument('--device', type=str, default="cuda")
 parser.add_argument('--use_SVR', action='store_true')
 parser.add_argument('--learning_rate', type=float, default=0.0002)
 parser.add_argument('--save_path', type=str, default='save')
+parser.add_argument('--result_path', type=str, default='result')
                     
 args = parser.parse_args()
 
